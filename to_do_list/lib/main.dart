@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'AppColors.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -21,37 +23,174 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Theme Demo',
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
+      //current theme
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+
+        // ✅ Primary color of app
+        primaryColor: AppColors.primary,
+
+        // ✅ App-wide color scheme (IMPORTANT in Material 3)
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary, // your main brand color
+          brightness: Brightness.light,
+        ),
+
+        // ✅ AppBar Theme
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.background,
+        ),
+
+        // ✅ Button Theme
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.background,
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.dark,
+        ),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+        ),
+      ),
       themeMode: _themeMode,
-      // ✅ NOW it updates
+      // pass change theme function
       home: HomePage(changeTheme: changeTheme),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final Function(ThemeMode) changeTheme;
 
   const HomePage({super.key, required this.changeTheme});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> toDo = [];
+
+  void addItem(String item) {
+    setState(() {
+      toDo.add({"text": item, "isDone": false});
+    });
+  }
+
+  void removeItem(index) {
+    setState(() {
+      toDo.removeAt(index);
+    });
+    print(toDo);
+  }
+
+  void editItem(index, item) {
+    setState(() {
+      toDo[index]["text"] =item;
+    });
+    print(toDo);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Theme Switcher')),
-      body: Center(
-        child: Row(
+      appBar: AppBar(title: const Text('To-Do List App')),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(15),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: toDo.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  elevation: 1.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: Row(
+                      spacing: 5,
+                      children: [
+                        Checkbox(
+                          value: toDo[index]["isDone"],
+                          onChanged: (value) {
+                            setState(() {
+                              toDo[index]["isDone"] = value;
+                            });
+                          },
+                        ),
+                        Text(toDo[index]["text"]),
+                        Spacer(),
+                        InkWell(
+                          child: Icon(
+                            Icons.delete_forever_outlined,
+                            color: Colors.red.shade900,
+                          ),
+                          onTap: () {
+                            removeItem(index);
+                          },
+                        ),
+                        InkWell(
+                          child: Icon(Icons.edit),
+                          onTap: () {
+                            editItem(index, "Hey");
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          addItem("Hello");
+        },
+        child: Icon(Icons.add),
+      ),
+      drawer: Container(
+        color: Colors.white,
+        width: 150,
+        height: double.infinity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             ElevatedButton(
-              onPressed: () => changeTheme(ThemeMode.light),
+              onPressed: () => widget.changeTheme(ThemeMode.light),
               child: const Text('Light'),
             ),
             const SizedBox(width: 10),
             ElevatedButton(
-              onPressed: () => changeTheme(ThemeMode.dark),
+              onPressed: () => widget.changeTheme(ThemeMode.dark),
               child: const Text('Dark'),
+            ),
+            const SizedBox(width: 10),
+            ElevatedButton(
+              onPressed: () => widget.changeTheme(ThemeMode.system),
+              child: const Text('System'),
             ),
           ],
         ),
