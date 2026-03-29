@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'AppColors.dart';
 
 void main() async {
@@ -39,7 +38,7 @@ class _MyAppState extends State<MyApp> {
     String? savedTheme = widget.prefs?.getString('theme');
 
     _themeMode = ThemeMode.values.firstWhere(
-          (e) => e.name == savedTheme,
+      (e) => e.name == savedTheme,
       orElse: () => ThemeMode.system,
     );
   }
