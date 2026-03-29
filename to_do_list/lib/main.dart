@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:to_do_list/db_helper.dart';
 import 'AppColors.dart';
 
 void main() async {
@@ -108,13 +109,30 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> toDo = [];
+  DBHelper? dbRef;
   final TextEditingController listItem = TextEditingController();
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    dbRef = DBHelper.getInstance;
+    getNotes();
+  }
+
+  void getNotes() async {
+    toDo = await dbRef!.getAllNotes();
+    setState(() {
+
+    });
+  }
+
   void addItem(String item) {
+    dbRef!.addNote(mTitle: item, isDone: false);
     setState(() {
       listItem.text = "";
-      toDo.add({"text": item, "isDone": false});
     });
+    getNotes();
   }
 
   void removeItem(index) {
@@ -122,13 +140,16 @@ class _HomePageState extends State<HomePage> {
       toDo.removeAt(index);
     });
     print(toDo);
+    getNotes();
   }
 
-  void editItem(index, item) {
-    setState(() {
-      toDo[index]["text"] = item;
-    });
+  void editItem(index, item, isDone) {
+    // setState(() {
+    //   toDo[index]["text"] = item;
+    // });
+    dbRef!.updateNote(sNo: index, mTitle: item, isDone: isDone);
     print(toDo);
+    getNotes();
   }
 
   // Function to open the small form dialog
@@ -163,7 +184,8 @@ class _HomePageState extends State<HomePage> {
                 }
                 index < 0
                     ? addItem(listItem.text)
-                    : editItem(index, listItem.text);
+                    : editItem(toDo[index][dbRef!.COLUMN_NOTE_SNO], listItem.text, toDo[index][dbRef!.COLUMN_NOTE_isDone] ==1 ? true : false);
+
                 Navigator.pop(context); // Close dialog
               },
               child: const Text("Submit"),
@@ -199,14 +221,15 @@ class _HomePageState extends State<HomePage> {
                       spacing: 5,
                       children: [
                         Checkbox(
-                          value: toDo[index]["isDone"],
+                          value: toDo[index]["isDone"] == 1 ? true : false,
                           onChanged: (value) {
-                            setState(() {
-                              toDo[index]["isDone"] = value;
-                            });
+                            // setState(() {
+                            //   toDo[index]["isDone"] = value;
+                            // });
+                            editItem(toDo[index][dbRef!.COLUMN_NOTE_SNO], toDo[index][dbRef!.COLUMN_NOTE_TITLE], value!);
                           },
                         ),
-                        Text(toDo[index]["text"]),
+                        Text(toDo[index][dbRef!.COLUMN_NOTE_TITLE]),
                         Spacer(),
                         InkWell(
                           child: Icon(
@@ -214,13 +237,14 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.red.shade900,
                           ),
                           onTap: () {
-                            removeItem(index);
+                            dbRef!.deleteNote(sNo: toDo[index][dbRef!.COLUMN_NOTE_SNO]);
+                            getNotes();
                           },
                         ),
                         InkWell(
                           child: Icon(Icons.edit),
                           onTap: () {
-                            listItem.text = toDo[index]["text"];
+                            listItem.text = toDo[index][dbRef!.COLUMN_NOTE_TITLE];
                             _openFormDialog(index);
                           },
                         ),
