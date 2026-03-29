@@ -1,23 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'AppColors.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final SharedPreferences? prefs;
+
+  const MyApp({super.key, this.prefs});
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
+  // late SharedPreferences prefs;
   ThemeMode _themeMode = ThemeMode.system;
 
-  void changeTheme(ThemeMode mode) {
-    setState(() => _themeMode = mode);
+  void changeTheme(ThemeMode mode) async {
+    await widget.prefs?.setString('theme', mode.name);
+
+    setState(() {
+      _themeMode = mode;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    String? savedTheme = widget.prefs?.getString('theme');
+
+    _themeMode = ThemeMode.values.firstWhere(
+          (e) => e.name == savedTheme,
+      orElse: () => ThemeMode.system,
+    );
   }
 
   @override
@@ -85,9 +109,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> toDo = [];
+  final TextEditingController listItem = TextEditingController();
 
   void addItem(String item) {
     setState(() {
+      listItem.text = "";
       toDo.add({"text": item, "isDone": false});
     });
   }
@@ -101,9 +127,52 @@ class _HomePageState extends State<HomePage> {
 
   void editItem(index, item) {
     setState(() {
-      toDo[index]["text"] =item;
+      toDo[index]["text"] = item;
     });
     print(toDo);
+  }
+
+  // Function to open the small form dialog
+  void _openFormDialog(index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Enter Details"),
+          content: TextField(
+            controller: listItem,
+            decoration: const InputDecoration(
+              labelText: "Enter List Item",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Validate input
+                if (listItem.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please fill all fields")),
+                  );
+                  return;
+                }
+                index < 0
+                    ? addItem(listItem.text)
+                    : editItem(index, listItem.text);
+                Navigator.pop(context); // Close dialog
+              },
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -152,7 +221,8 @@ class _HomePageState extends State<HomePage> {
                         InkWell(
                           child: Icon(Icons.edit),
                           onTap: () {
-                            editItem(index, "Hey");
+                            listItem.text = toDo[index]["text"];
+                            _openFormDialog(index);
                           },
                         ),
                       ],
@@ -166,7 +236,8 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          addItem("Hello");
+          listItem.text = "";
+          _openFormDialog(-1);
         },
         child: Icon(Icons.add),
       ),
