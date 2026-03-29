@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/to_do_list/to_do_list.iml" filepath="$PROJECT_DIR$/to_do_list/to_do_list.iml" />
+      <module fileurl="file://$PROJECT_DIR$/to_do_list/android/to_do_list_android.iml" filepath="$PROJECT_DIR$/to_do_list/android/to_do_list_android.iml" />
     </modules>
   </component>
 </project>
