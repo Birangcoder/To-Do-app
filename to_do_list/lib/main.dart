@@ -135,14 +135,6 @@ class _HomePageState extends State<HomePage> {
     getNotes();
   }
 
-  void removeItem(index) {
-    setState(() {
-      toDo.removeAt(index);
-    });
-    print(toDo);
-    getNotes();
-  }
-
   void editItem(index, item, isDone) {
     // setState(() {
     //   toDo[index]["text"] = item;
