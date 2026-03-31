@@ -28,9 +28,9 @@ class DBHelper {
     String dbPath = join(appDir, "noteDB.db");
     return await openDatabase(
       dbPath,
-      onCreate: (db, version) {
+      onCreate: (db, version) async {
         /// create all your tables here
-        db.execute(
+        await db.execute(
           "create table IF NOT EXISTS $TABLE_NOTE ( $COLUMN_NOTE_SNO integer primary key autoincrement, $COLUMN_NOTE_TITLE text, $COLUMN_NOTE_isDone integer)",
         );
 

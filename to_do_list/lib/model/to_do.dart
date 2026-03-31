@@ -1,20 +1,27 @@
-class ToDo{
+class ToDo {
   final int id;
   final String title;
-  final bool isSelect;
+  final bool isDone;
 
-  ToDo({required this.id, required this.title, required this.isSelect});
+  ToDo({
+    required this.id,
+    required this.title,
+    required this.isDone,
+  });
 
-  // Convert a ToDo into a Map. The keys must correspond to the names of the
-  // columns in the database.
-  Map<String, Object?> toMap() {
-    return {'id': id, 'title': title, 'isSelect': isSelect};
+  Map<String, dynamic> toMap() {
+    return {
+      's_no': id,
+      'title': title,
+      'isDone': isDone ? 1 : 0,
+    };
   }
 
-  // Implement toString to make it easier to see information about
-  // each ToDo when using the print statement.
-  @override
-  String toString() {
-    return 'ToDo{id: $id, title: $title, isSelect: $isSelect}';
+  factory ToDo.fromMap(Map<String, dynamic> data) {
+    return ToDo(
+      id: data['s_no'],
+      title: data['title'],
+      isDone: data['isDone'] == 1,
+    );
   }
 }

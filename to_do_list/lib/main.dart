@@ -111,6 +111,7 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> toDo = [];
   DBHelper? dbRef;
   final TextEditingController listItem = TextEditingController();
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -121,10 +122,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void getNotes() async {
-    toDo = await dbRef!.getAllNotes();
-    setState(() {
+    isLoading = true;
+    setState(() {});
 
-    });
+    toDo = await dbRef!.getAllNotes();
+
+    isLoading = false;
+    setState(() {});
   }
 
   void addItem(String item) {
@@ -192,7 +196,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('To-Do List App')),
-      body: SingleChildScrollView(
+      body: isLoading ? CircularProgressIndicator(): SingleChildScrollView(
         padding: EdgeInsets.all(15),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
