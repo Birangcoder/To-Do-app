@@ -1,10 +1,10 @@
 class ToDo {
-  final int id;
+  final int? id;
   final String title;
   final bool isDone;
 
   ToDo({
-    required this.id,
+    this.id,
     required this.title,
     required this.isDone,
   });

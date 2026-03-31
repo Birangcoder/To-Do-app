@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:to_do_list/db_helper.dart';
-import 'AppColors.dart';
+import 'package:to_do_list/helper/db_helper.dart';
+import 'package:to_do_list/providers/provider.dart';
+import 'package:provider/provider.dart';
+import 'style/AppColors.dart';
+import 'model/to_do.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
 
-  runApp(MyApp(prefs: prefs));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ToDoProvider()..getNotes(),
+      child: MyApp(prefs: prefs),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -108,45 +116,42 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, dynamic>> toDo = [];
-  DBHelper? dbRef;
+  // List<ToDo> toDo = [];
+  // DBHelper? dbRef;
   final TextEditingController listItem = TextEditingController();
-  bool isLoading = true;
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    dbRef = DBHelper.getInstance;
-    getNotes();
-  }
+  // bool isLoading = true;
 
-  void getNotes() async {
-    isLoading = true;
-    setState(() {});
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   dbRef = DBHelper.getInstance;
+  //   getNotes();
+  // }
 
-    toDo = await dbRef!.getAllNotes();
+  // void getNotes() async {
+  //   isLoading = true;
+  //   setState(() {});
+  //
+  //   toDo = await dbRef!.getAllNotes();
+  //
+  //   isLoading = false;
+  //   setState(() {});
+  // }
 
-    isLoading = false;
-    setState(() {});
-  }
-
-  void addItem(String item) {
-    dbRef!.addNote(mTitle: item, isDone: false);
-    setState(() {
-      listItem.text = "";
-    });
-    getNotes();
-  }
-
-  void editItem(index, item, isDone) {
-    // setState(() {
-    //   toDo[index]["text"] = item;
-    // });
-    dbRef!.updateNote(sNo: index, mTitle: item, isDone: isDone);
-    print(toDo);
-    getNotes();
-  }
+  // void addItem(String item) {
+  //   dbRef!.addNote(mTitle: item, isDone: false);
+  //   setState(() {
+  //     listItem.text = "";
+  //   });
+  //   getNotes();
+  // }
+  //
+  // void editItem(index, item, isDone) {
+  //   dbRef!.updateNote(sNo: index, mTitle: item, isDone: isDone);
+  //   print(toDo);
+  //   getNotes();
+  // }
 
   // Function to open the small form dialog
   void _openFormDialog(index) {
@@ -179,8 +184,12 @@ class _HomePageState extends State<HomePage> {
                   return;
                 }
                 index < 0
-                    ? addItem(listItem.text)
-                    : editItem(toDo[index][dbRef!.COLUMN_NOTE_SNO], listItem.text, toDo[index][dbRef!.COLUMN_NOTE_isDone] ==1 ? true : false);
+                    ? context.read<ToDoProvider>().addItem(listItem.text)
+                    : context.read<ToDoProvider>().editItem(
+                        context.read<ToDoProvider>().toDo[index].id,
+                        listItem.text,
+                        context.read<ToDoProvider>().toDo[index].isDone,
+                      );
 
                 Navigator.pop(context); // Close dialog
               },
@@ -194,65 +203,73 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final providerWatch = context.watch<ToDoProvider>();
+    final providerRead = context.read<ToDoProvider>();
     return Scaffold(
       appBar: AppBar(title: const Text('To-Do List App')),
-      body: isLoading ? CircularProgressIndicator(): SingleChildScrollView(
-        padding: EdgeInsets.all(15),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: toDo.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 1.5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: Row(
-                      spacing: 5,
-                      children: [
-                        Checkbox(
-                          value: toDo[index]["isDone"] == 1 ? true : false,
-                          onChanged: (value) {
-                            // setState(() {
-                            //   toDo[index]["isDone"] = value;
-                            // });
-                            editItem(toDo[index][dbRef!.COLUMN_NOTE_SNO], toDo[index][dbRef!.COLUMN_NOTE_TITLE], value!);
-                          },
+      body: providerWatch.isLoading
+          ? CircularProgressIndicator()
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(15),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: providerWatch.toDo.length,
+                    itemBuilder: (context, index) {
+                      return Card(
+                        elevation: 1.5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        Text(toDo[index][dbRef!.COLUMN_NOTE_TITLE]),
-                        Spacer(),
-                        InkWell(
-                          child: Icon(
-                            Icons.delete_forever_outlined,
-                            color: Colors.red.shade900,
+                        child: Padding(
+                          padding: const EdgeInsets.all(15),
+                          child: Row(
+                            spacing: 5,
+                            children: [
+                              Checkbox(
+                                value: providerWatch.toDo[index].isDone,
+                                onChanged: (value) {
+                                  providerRead.editItem(
+                                    providerRead.toDo[index].id,
+                                    providerRead.toDo[index].title,
+                                    value!,
+                                  );
+                                },
+                              ),
+                              Text(providerWatch.toDo[index].title),
+                              Spacer(),
+                              InkWell(
+                                child: Icon(
+                                  Icons.delete_forever_outlined,
+                                  color: Colors.red.shade900,
+                                ),
+                                onTap: () async {
+                                  await providerRead.deleteItem(
+                                    providerRead.toDo[index].id,
+                                  );
+                                  await providerWatch.getNotes();
+                                },
+                              ),
+                              InkWell(
+                                child: Icon(Icons.edit),
+                                onTap: () {
+                                  listItem.text =
+                                      providerRead.toDo[index].title;
+                                  _openFormDialog(index);
+                                },
+                              ),
+                            ],
                           ),
-                          onTap: () {
-                            dbRef!.deleteNote(sNo: toDo[index][dbRef!.COLUMN_NOTE_SNO]);
-                            getNotes();
-                          },
                         ),
-                        InkWell(
-                          child: Icon(Icons.edit),
-                          onTap: () {
-                            listItem.text = toDo[index][dbRef!.COLUMN_NOTE_TITLE];
-                            _openFormDialog(index);
-                          },
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           listItem.text = "";
